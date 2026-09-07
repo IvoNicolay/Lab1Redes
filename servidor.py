@@ -1,23 +1,27 @@
 import socket
+import json
 
-HOST = '127.0.0.1'  # IP Local
-PORT = 65432        # Puerto de escucha
+UDP_PORT = 6005 # Grupo 05
+TCP_PORT = 8080 # El puerto donde se levanta el socket TCP
 
-# with garantiza que el socket se cierre automáticamente al terminar
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.bind((HOST, PORT)) # asocia el socket a la dirección y puerto especificados
-    s.listen() # pone el socket en modo escucha, esperando conexiones entrantes
-    print(f"Servidor escuchando en {HOST}:{PORT}...")
-    
-    # conn es el nuevo socket para interactuar con este cliente específico
-    conn, addr = s.accept() # Operacion bloquante hasta recibir una conexión entrante
-    with conn:
-        print(f"Conectado por el cliente: {addr}")
+def iniciar_discovery():
+    # SOCK_DGRAM indica que es un socket UDP
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_sock:
+        # '' (cadena vacía) permite escuchar en todas las interfaces de red
+        udp_sock.bind(('', UDP_PORT))
+        print(f"Escuchando broadcasts en el puerto UDP {UDP_PORT}...")
+        
         while True:
-            data = conn.recv(1024) # Recibir hasta 1024 bytes
-            if not data:
-                break # Si data está vacío, el cliente cerro la conexión
+            # recvfrom bloquea hasta recibir un paquete UDP
+            data, addr = udp_sock.recvfrom(1024)
+            mensaje_cliente = json.loads(data.decode('utf-8'))
             
-            print(f"Recibido: {data.decode('utf-8')}")
-            # Enviar de vuelta una respuesta
-            conn.sendall(b"Mensaje recibido por el servidor!")
+            tipo_agente = mensaje_cliente.get("tipo")
+            print(f"Solicitud de un agente '{tipo_agente}' desde la IP {addr[0]}")
+            
+            # Responder directamente a la IP y puerto temporal del cliente
+            respuesta = {"status": "ok", "tcp_port": TCP_PORT}
+            udp_sock.sendto(json.dumps(respuesta).encode('utf-8'), addr)
+
+if __name__ == "__main__":
+    iniciar_discovery()
