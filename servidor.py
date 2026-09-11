@@ -16,7 +16,7 @@ id_generador = 1
 #  DESCUBRIMIENTO UDP
 def iniciar_servidor_udp():
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_sock:
-        udp_sock.bind(('', UDP_PORT))
+        udp_sock.bind(('', UDP_PORT)) # Escucha todas las interfaces
         print(f"UDP: Escuchando broadcasts en el puerto {UDP_PORT}...")
         
         while True:
@@ -77,13 +77,18 @@ def manejar_cliente_tcp(conn, addr):
                         elif cmd[0] == "PROC":
                             # Guardamos los procesos temporalmente en la memoria del servidor
                             agentes_comunes[mi_id]["procesos"] = " ".join(cmd[1:])
-                        # Registrar alertas en bitácora
+                        # Registrar alertas en bitacora
                         elif cmd[0] == "ALERT" and len(cmd) == 3:
                             print(f"ALERTA: Agente {mi_id}: {cmd[1]} excedió umbral con {cmd[2]}")
+                        elif cmd[0] == "END":
+                            # Control C en consola cliente comun
+                            break
                 
-                # Limpieza al desconectar (Mensaje END o caida)
+                # Solo limpia si sale del while
+                if mi_id in agentes_comunes:
+                    del agentes_comunes[mi_id]
                 print(f"Agente {mi_id} desconectado.")
-                del agentes_comunes[mi_id]
+                
 
             # Validación Agente Admin
             elif len(partes) == 2 and partes[0] == "ADMIN" and partes[1] == CLAVE_SECRETA:

@@ -9,7 +9,7 @@ def descubrir_servidor():
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_sock:
         udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         udp_sock.settimeout(5.0)
-        print(f"AGENTE COMÚN: Buscando servidor en la red local...")
+        print(f"AGENTE COMÚN: Buscando servidor en la red local")
         udp_sock.sendto(b"DISCOVER\n", ('<broadcast>', UDP_PORT))
         try:
             data, addr = udp_sock.recvfrom(1024)
@@ -96,6 +96,12 @@ def iniciar_conexion_tcp_comun(ip_servidor, puerto_tcp, umbral_cpu, umbral_mem, 
                     
                     # Esperar 15 segundos antes de la siguiente lectura
                     time.sleep(15)
+
+                except KeyboardInterrupt:
+                    # Se ejecuta cuando el usuario presiona Ctrl C
+                    print("\n Deteniendo agente comun")
+                    tcp_sock.sendall(b"END\n") # Enviamos mensaje END al servidor antes de cerrar
+                    print("TCP: Mensaje END enviado. Desconectando.")
                     
                 except (ConnectionResetError, BrokenPipeError):
                     print("ERROR: El servidor cerró la conexión inesperadamente.")
